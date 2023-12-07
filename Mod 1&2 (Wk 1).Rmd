@@ -128,3 +128,6 @@ sd(s)
 
 ## Challnge 4: Writing a Script
 See R Script
+
+# Module 2 Basics of Version Control
+Github Set up
