@@ -280,13 +280,210 @@ power.test <- function(mu0, muA, sigma, alpha = 0.05, type, alternative) {
 }
 ```
 
-```{r}
-manipulate(plot(1:5, cex = size), size = slider(0.5, 10, step = 0.5))  #run this to get it going
-manipulate(power.test(mu0, muA, sigma, alpha, type, alternative), mu0 = slider(-10,
-    10, initial = 3, step = 1), muA = slider(-10, 10, initial = 0, step = 1),
-    sigma = slider(1, 10, initial = 3, step = 1), alpha = slider(0.01, 0.1,
-        initial = 0.05, step = 0.01), alternative = picker("two.sided", "one.sided"),
-    type = picker("two.sample", "one.sample", "paired"))
+# Module 12 Intro to Linear Regression
+
+```{r, message=FALSE}
+library(curl)
+library(ggplot2)
+library(gridExtra)
+library(manipulate)
+library(lmodel2)
 ```
 
-# Module 12 Intro to Linear Regression
+Covariance & Correlation
+
+```{r}
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Fall23/zombies.csv")
+d <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)
+```
+
+```{r}
+plot(data = d, height ~ weight)
+```
+
+## Challenge 1
+```{r}
+w <- d$weight
+h <- d$height
+n <- length(w)  # or length(h)
+cov_wh <- sum((w - mean(w)) * (h - mean(h)))/(n - 1)
+cov_wh
+#same outcome using base R
+cov(w, h)
+```
+
+## Challenge 2
+```{r}
+sd_w <- sd(w)
+sd_h <- sd(h)
+cor_wh <- cov_wh/(sd_w * sd_h)
+cor_wh
+```
+
+Regression & The lm() function
+
+## Challenge 3
+- plot the zombie height as a function of age
+```{r}
+plot(data = d, height ~ age)
+```
+
+```{r}
+beta1 <- cor(d$height, d$age) * sd(d$height)/sd(d$age)
+beta1
+beta0 <- mean(d$height) - beta1 * mean(d$age)
+beta0
+```
+
+```{r}
+m <- lm(height ~ age, data = d)
+m
+```
+
+Statistical Inference in Regression + Interpreting Regression Coefs & Prediction
+```{r}
+m <- lm(data = d, height ~ weight)
+summary(m)
+```
+
+```{r}
+t <- coef(summary(m))
+t <- data.frame(unlist(t))
+colnames(t) <- c("Est", "SE", "t", "p")
+t
+```
+```{r}
+t$calct <- (t$Est - 0)/t$SE
+t$calcp <- 2 * pt(t$calct, df = 998, lower.tail = FALSE)  # x2 because is 2-tailed test
+t
+```
+```{r}
+t$lower <- t$Est - qt(0.975, df = 998) * t$SE
+t$upper <- t$Est + qt(0.975, df = 998) * t$SE
+ci <- c(t$lower, t$upper)  # by hand
+ci
+```
+```{r}
+ci <- confint(m, level = 0.95)  # using the results of lm()
+ci
+```
+
+## Challenge 4
+If zombie survivor weight is measured in pounds and zombie survivor height is measured in inches, what is the expected height of a zombie survivor weighing 150 pounds?
+
+```{r}
+beta0 <- t$Est[1]
+beta1 <- t$Est[2]
+h_hat <- beta1 * 150 + beta0
+h_hat
+```
+
+```{r}
+h_hat_difference <- (beta1 * 220 + beta0) - (beta1 * 180 + beta0)
+h_hat_difference
+```
+
+```{r}
+m <- lm(data = d, height ~ weight)
+h_hat <- predict(m, newdata = data.frame(weight = d$weight))
+df <- data.frame(cbind(d$weight, d$height, h_hat))
+names(df) <- c("x", "y", "yhat")
+head(df)
+```
+
+```{r}
+g <- ggplot(data = df, aes(x = x, y = yhat))
+g <- g + geom_point()
+g <- g + geom_point(aes(x = x, y = y), colour = "red")
+g <- g + geom_segment(aes(x = x, y = yhat, xend = x, yend = y))
+g
+```
+```{r}
+ci <- predict(m, newdata = data.frame(weight = 150), interval = "confidence",
+    level = 0.95)  # for a single value
+ci
+```
+
+```{r}
+ci <- predict(m, newdata = data.frame(weight = d$weight), interval = "confidence",
+    level = 0.95)  # for a vector of values
+head(ci)
+```
+```{r}
+df <- cbind(df, ci)
+names(df) <- c("x", "y", "yhat", "CIfit", "CIlwr", "CIupr")
+head(df)
+```
+
+```{r}
+g <- ggplot(data = df, aes(x = x, y = y))
+g <- g + geom_point(alpha = 1/2)
+g <- g + geom_line(aes(x = x, y = CIfit), colour = "black")
+g <- g + geom_line(aes(x = x, y = CIlwr), colour = "blue")
+g <- g + geom_line(aes(x = x, y = CIupr), colour = "blue")
+g
+```
+
+```{r}
+# for y at each x
+pi <- predict(m, newdata = data.frame(weight = 150), interval = "prediction",
+    level = 0.95)  # for a single value
+pi
+
+#for a vector of values
+pi <- predict(m, newdata = data.frame(weight = d$weight), interval = "prediction",
+    level = 0.95)  # for a vector of values
+head(pi)
+```
+```{r}
+df <- cbind(df, pi)
+names(df) <- c("x", "y", "yhat", "CIfit", "CIlwr", "CIupr", "PIfit", "PIlwr",
+    "PIupr")
+head(df)
+```
+```{r}
+g <- g + geom_line(data = df, aes(x = x, y = PIlwr), colour = "red")
+g <- g + geom_line(data = df, aes(x = x, y = PIupr), colour = "red")
+g
+```
+
+## Challenge 5
+Construct a linear model for the regression of zombie survivor height on age and predict the mean height, the 95% confidence interval (CI) around the predicted mean height, and the 95% prediction interval (PI) around that mean for a vector of zombie survivor ages, v <- seq(from=10, to=30, by=1)
+```{r}
+v <- seq(from = 10, to = 30, by = 1)
+m <- lm(data = d, height ~ age)
+ci <- predict(m, newdata = data.frame(age = v), interval = "confidence", level = 0.95)
+pi <- predict(m, newdata = data.frame(age = v), interval = "prediction", level = 0.95)
+```
+
+Then, plot your points, your regression line, and lines for the lower and upper limits of the CI and of the PI.
+```{r}
+plot(data = d, height ~ age)
+lines(x = v, y = ci[, 1], col = "black")
+lines(x = v, y = ci[, 2], col = "blue")
+lines(x = v, y = ci[, 3], col = "blue")
+lines(x = v, y = pi[, 2], col = "red")
+lines(x = v, y = pi[, 3], col = "red")
+```
+
+```{r}
+require(gridExtra)
+df <- data.frame(cbind(v, ci, pi))
+names(df) <- c("age", "CIfit", "CIlwr", "CIupr", "PIfit", "PIlwr", "PIupr")
+head(df)
+```
+```{r}
+g1 <- ggplot(data = d, aes(x = age, y = height))
+g1 <- g1 + geom_point(alpha = 1/2)
+g1 <- g1 + geom_line(data = df, aes(x = v, y = CIfit), colour = "black", lwd = 1)
+g1 <- g1 + geom_line(data = df, aes(x = v, y = CIlwr), colour = "blue")
+g1 <- g1 + geom_line(data = df, aes(x = v, y = CIupr), colour = "blue")
+g1 <- g1 + geom_line(data = df, aes(x = v, y = PIlwr), colour = "red")
+g1 <- g1 + geom_line(data = df, aes(x = v, y = PIupr), colour = "red")
+g2 <- ggplot(data = d, aes(x = age, y = height))
+g2 <- g2 + geom_point(alpha = 1/2)
+g2 <- g2 + geom_smooth(method = "lm", formula = y ~ x)
+grid.arrange(g1, g2, ncol = 2)
+```
+
