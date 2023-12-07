@@ -90,3 +90,41 @@ x <- c("2", 2, "zombies")
 class(x)
 ```
 
+```{r}
+# Create a vector using ':' operator
+x <- 1:10
+x
+# attributes of x
+length(x)
+```
+
+## Challenge 3: Vector Math
+
+```{r}
+x <- 15:28 # or x <- c(15, 16, 17...)
+y <- 1:4
+x + y
+```
+
+```{r}
+s <- x + y
+s
+```
+
+```{r}
+class(s)
+length(s)
+```
+
+```{r}
+z <- c(10, 100)
+x * z
+```
+
+```{r}
+mean(s)
+sd(s)
+```
+
+## Challnge 4: Writing a Script
+See R Script
