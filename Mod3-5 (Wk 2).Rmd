@@ -9,7 +9,7 @@ Setting up Git & linking Repo
 
 # Module 4 Working w/ Data Structures
 ```{r}
-install.packages("stringr")
+library(stringr)
 ```
 
 ## Challenge 1
@@ -179,13 +179,10 @@ str(m3)
 
 # Module 5 Getting Data into R
 ```{r}
-install.packages("readr")
+library(readr)
 ```
 
-```{r}
-f <- file.choose()
-```
-
+can also use file.choose()
 ```{r}
 f <- "~/Desktop/CPDS-1960-2014-reduced.txt"
 d <- read.table(f, header = TRUE, sep =",", stringsAsFactors = FALSE, fill=T)
