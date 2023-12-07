@@ -66,7 +66,7 @@ a[2, 3, 2, ]
 a[1:5, 1:5, 3, 3]
 ```
 
-OVerwriting
+Overwriting
 ```{r}
 m[7,1] <- 564
 m[,8] <- 2
@@ -87,10 +87,187 @@ l
 
 ```{r}
 l[[2]] 
+l[[2]][2,6]
+l[1:2] 
+l[c(1,3)]
 ```
 
 ```{r}
-l[[2]][2,6] 
+str(l)
+```
+
+```{r}
+names(l) <- c("string", "matrix", "logical")
+names(l)
+```
+
+```{r}
+l$string 
+```
+
+```{r}
+l$matrix[3,5]
+```
+
+## Challenge 4
+```{r}
+# Getting Started w/ provided code for Strepsirhini
+Lemuroidea<-c("Cheirogaleidae","Lepilemuridae","Indriidae","Lemuridae","Daubentoniidae")
+Lorisoidea<-c("Lorisidae","Galagidae")
+Strepsirhini<-list(Lemuroidea,Lorisoidea)
+names(Strepsirhini)<-list("Lemuroidea","Lorisoidea")
+Strepsirhini
+```
+```{r}
+# for Haplorhini
+Tarsioidea <- c("Tarsiidae")
+Catarrhini <- c("Cercopithecidae", "Hylobatidae", "Hominidae")
+Platyrrini <- c("Cebidae", "Atelidae", "Pitheciidae")
+Anthropoidea <- list(Catarrhini, Platyrrini)
+names(Anthropoidea) <- list("Catarrhini", "Platyrrini")
+Haplorhini <- list(Anthropoidea, Tarsioidea)
+names(Haplorhini) <- list("Anthropoidea", "Tarsioidea")
+Haplorhini
+```
+
+```{r}
+# Full list
+Platyrrini <- c("Cebidae", "Atelidae", "Pitheciidae")
+Catarrhini <- c("Cercopithecidae", "Hylobatidae", "Hominidae")
+Tarsioidea <- c("Tarsiidae")
+Anthropoidea <- list(Platyrrini,Catarrhini)
+names(Anthropoidea) <- list("Platyrrini", "Catarrhini")
+Tarsioidea <- c("Tarsiidae")
+Haplorhini <- list(Anthropoidea, Tarsioidea)
+names(Haplorhini) <- list("Anthropoidea", "Tarsioidea")
+Haplorhini
+Lorisoidea <- c("Lorisidae", "Galagidae")
+Lemuroidea <- c("Cheirogaleidae", "Lepilemuridae", "Indriidae", "Lemuridae", "Daubentoniidae")
+Strepsirhini <- list(Lorisoidea,Lemuroidea)
+names(Strepsirhini) <- list("Lorisoidea", "Lemuroidea")
+Strepsirhini
+Primates <- list(Haplorhini, Strepsirhini)
+names(Primates) <- list("Haplorhini", "Strepsirhini")
+Primates
+```
+
+## Challenge 5
+Data Frames
+```{r}
+m3<-matrix(data=c(3, 0, 1 ,23, 1, 2, 33, 1, 1, 42, 0, 1, 41, 0, 2),nrow=5,ncol=3,byrow=TRUE)
+m3
+```
+
+```{r}
+m3<-as.data.frame(m3)
+m3
+```
+
+```{r}
+m3$V2<-as.logical(m3$V2)
+m3
+```
+
+```{r}
+m3$V3<-as.factor(m3$V3)
+m3
+```
+
+```{r}
+str(m3)
 ```
 
 # Module 5 Getting Data into R
+```{r}
+install.packages("readr")
+```
+
+```{r}
+f <- file.choose()
+```
+
+```{r}
+f <- "~/Desktop/CPDS-1960-2014-reduced.txt"
+d <- read.table(f, header = TRUE, sep =",", stringsAsFactors = FALSE, fill=T)
+head(d) # lists the first 6 lines of data
+```
+
+```{r}
+tail(d)
+class(d)
+```
+
+```{r}
+d <- read.delim(f, header = TRUE, stringsAsFactors = FALSE)
+head(d)
+```
+```{r}
+f <- "~/Desktop/CPDS-1960-2014-reduced.csv"
+d <- read.table(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)
+```
+```{r}
+d <- read.csv(f, header = TRUE, stringsAsFactors = FALSE)
+head(d)
+```
+```{r}
+require(readr)
+f <- "~/Desktop/CPDS-1960-2014-reduced.txt"
+d <- read_tsv(f, col_names = TRUE)
+```
+```{r}
+head(d)
+class(d)
+```
+
+```{r}
+d <- read_delim(f, delim = "\t", col_names = TRUE)
+head(d)
+```
+
+```{r}
+require(readr)
+f <- "~/Desktop/CPDS-1960-2014-reduced.csv"
+d <- read_csv(f, col_names = TRUE)
+head(d)
+```
+
+```{r}
+d <- read_delim(f, delim = ",", col_names = TRUE)
+head(d)
+```
+```{r}
+require(readxl)
+f <- "~/Desktop/CPDS-1960-2014-reduced.xlsx"
+d <- read_excel(f, sheet = 1, col_names = TRUE)
+head(d)
+str(d)
+```
+
+```{r}
+library(curl)
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Fall23/CPDS-1960-2014-reduced.csv")
+d <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)
+```
+
+```{r}
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Fall23/CPDS-1960-2014-reduced.txt")
+d <- read.table(f, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+head(d)
+```
+
+```{r}
+Sys.setenv(VROOM_CONNECTION_SIZE = 131072 * 2)
+library(readr)
+f <- "https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Fall23/CPDS-1960-2014-reduced.csv"
+d <- read_csv(f, col_names = TRUE)
+head(d)
+```
+
+```{r}
+f <- "https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Fall23/CPDS-1960-2014-reduced.txt"
+d <- read_tsv(f, col_names = TRUE)
+head(d)
+```
+
