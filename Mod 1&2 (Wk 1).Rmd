@@ -1,0 +1,92 @@
+---
+title: "Mod 1 & 2 (Wk 1)"
+author: "Julianna D."
+date: "2023-09-07"
+output: html_document
+---
+# Module 1: First Steps with R
+
+## Challenge 1: 
+```{r}
+# Basic Math
+8+5
+10-6/2
+(10-6)/2
+10*5
+15/5
+10^5
+3*pi
+```
+
+```{r}
+# Assignments
+x<-6
+x
+y<-5
+y
+z<-x*y
+z
+x2<-x^2
+x2
+```
+
+```{r}
+# Built-in Functions
+x<-10
+log(x)
+factorial(x)
+y<-81
+sqrt(y)
+z<--8.349218
+round(z, digits=3)
+abs(z*y)
+```
+
+```{r}
+# Use the `ls()` function to list the variables currently stored in your active session. How many do you have?
+ls()
+```
+
+```{r}
+# Clear all the variables you've defined
+rm(list=ls())
+```
+
+What happens if you type a function name without including the parentheses?
+Answer: if you type a function without including the parentheses, the output will show you the details of the function, such as the necessary arguments and what each means.
+```{r}
+ls
+```
+
+## Challenge 2: Objects, Classes, Attributes, Vectors
+```{r}
+#using c() to create vectors
+x <- c(15, 16, 12, 3, 21, 45, 23)
+x
+y <- c("once", "upon", "a", "time")
+y
+z <- "once upon a time"
+z
+```
+
+```{r}
+f <- function(){
+	# code to be evaluated
+}
+# this is the minimal definition for a function
+```
+
+- What is the class of x? Of y? of f? Use the `class()` function to check.
+```{r}
+class(x)
+class(y)
+class(f)
+```
+
+What is the class of X now?
+Answer: it is now a character.
+```{r}
+x <- c("2", 2, "zombies")
+class(x)
+```
+
