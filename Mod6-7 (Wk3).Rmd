@@ -4,4 +4,327 @@ author: "Julianna D."
 date: "2023-09-21"
 output: html_document
 ---
+# Module 6 Exploratory Data Analysis
 
+## Challenge 1
+```{r, message=FALSE}
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+```
+
+What are the median area and population size of all countries in the dataset? HINT: There are a couple of ways to do this… try summary() and median() (for the latter, you’ll need to use the na.rm = TRUE argument)
+Answer: Median area = 610; Median population size = 4.912e+06
+```{r}
+library(curl)
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Fall23/Country-Data-2016.csv")
+d <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = FALSE)
+head(d)
+summary(d)
+names(d)
+```
+
+Create a new pop_density variable in your data frame which is population / area. What are the 10 most dense countries? The 10 least dense? HINT: check out the order() function
+```{r}
+d$density <- d$population/d$area
+d <- d[order(-d$density), ]
+d[1:10, ]
+```
+
+```{r}
+d <- d[order(d$density), ]
+d[1:10, ]
+```
+
+Extract data from all countries beginning with the letters “A” through “F”. What are the mean area and population size of these countries?
+```{r}
+new <- d[grep("^[A-F]", d$country), ]
+summary(new)
+```
+Alternatively...
+```{r}
+mean(new$population, na.rm = TRUE)
+mean(new$area, na.rm = TRUE)
+```
+
+## Challenge 2 Box & Bar Plots
+
+```{r, warning=FALSE}
+par(mfrow = c(2, 3))
+boxplot(d$population)
+boxplot(log(d$population))
+boxplot(d$area)
+boxplot(log(d$area))
+barplot(d$population)
+barplot(d$area)
+```
+
+## Challenge 3 Histograms
+```{r, message=FALSE}
+par(mfrow = c(1, 2))  # gives us two panels
+attach(d)
+hist(log(population), freq = FALSE, col = "red", main = "Plot 1", xlab = "log(population size)",
+    ylab = "density", ylim = c(0, 0.2))
+hist(log(area), freq = FALSE, col = "red", main = "Plot 2", xlab = "log(area)",
+    ylab = "density", ylim = c(0, 0.2))
+```
+Density Plot
+```{r}
+par(mfrow = c(1, 1))  # set up one panel and redraw the log(population) histogram
+hist(log(population), freq = FALSE, col = "white", main = "My Plot with Mean and Density",
+    xlab = "log(population size)", ylab = "density", ylim = c(0, 0.2))
+abline(v = mean(log(population), na.rm = TRUE), col = "blue")
+lines(density(log(population), na.rm = TRUE), col = "green")
+```
+```{r}
+detach(d)
+```
+
+## Challenge 4 Tables
+
+```{r}
+sort(table(d$govt_form), decreasing = TRUE)
+```
+
+## Challenge 5 For Multivariate Data
+```{r}
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Fall23/KamilarAndCooperData.csv")
+d <- read.csv(f, header = TRUE, stringsAsFactors = FALSE)
+attach(d)
+head(d)
+```
+```{r}
+boxplot(log(Body_mass_female_mean) ~ Family, d)
+detach(d)
+```
+
+```{r}
+p <- ggplot(data = d, aes(x = Family, y = log(Body_mass_female_mean)))  #define the variables
+p <- p + geom_boxplot()  #graph them in a boxplot
+p <- p + theme(axis.text.x = element_text(angle = 90))  #put x-axis names at 90deg
+p <- p + ylab("log(Female Body Mass)")  #rename y-axis title
+p 
+```
+
+## Challenge 6 Scatterplots
+```{r, message=FALSE}
+attach(d)
+par(mfrow = c(1, 2))
+plot(x = Body_mass_female_mean, y = Brain_Size_Female_Mean)
+plot(x = log(Body_mass_female_mean), y = log(Brain_Size_Female_Mean))
+detach(d)
+```
+```{r}
+p <- ggplot(data = d, aes(x = log(Body_mass_female_mean), y = log(Brain_Size_Female_Mean),
+    color = factor(Family)))  # first, we build a plot object and color points by Family
+p <- p + xlab("log(Female Body Mass)") + ylab("log(Female Brain Size)")  # then we modify the axis labels
+p <- p + geom_point()  # then we make a scatterplot
+p <- p + theme(legend.position = "bottom", legend.title = element_blank())
+p
+```
+```{r}
+p <- p + facet_wrap(~Family, ncol = 4)
+p <- p + theme(legend.position = "none")
+p
+```
+
+```{r}
+p <- p + geom_smooth(method = "lm", fullrange = TRUE)
+p
+```
+## Challenge 7
+```{r}
+p <- ggplot(data = d, aes(x = log(Body_mass_female_mean), y = log(MaxLongevity_m)))
+p <- p + geom_point()
+p <- p + geom_smooth(method = "lm")
+p
+```
+```{r}
+aggregate(d$Body_mass_female_mean ~ d$Family, FUN = "mean", na.rm = TRUE)
+```
+
+```{r}
+s <- filter(d, Family == "Hominidae" & Mass_Dimorphism > 2)
+head(s)
+```
+```{r}
+s <- select(d, Family, Genus, Body_mass_male_mean)
+head(s)
+```
+```{r}
+s <- rename(d, Female_Mass = Body_mass_female_mean)
+head(s$Female_Mass)
+```
+```{r}
+s <- mutate(d, Binomial = paste(Genus, Species, sep = " "))
+head(s$Binomial)
+```
+
+```{r}
+s <- summarise(d, avgF = mean(Body_mass_female_mean, na.rm = TRUE), avgM = mean(Body_mass_male_mean,
+    na.rm = TRUE))
+s
+```
+
+```{r}
+byFamily <- group_by(d, Family)
+byFamily
+s <- summarise(byFamily, avgF = mean(Body_mass_female_mean, na.rm = TRUE), avgM = mean(Body_mass_male_mean,
+    na.rm = TRUE))
+s
+```
+Piping
+```{r}
+s <-                                                             #to create dataframe "s"
+  d %>%                                                          #take dataframe "d"
+  group_by(Family) %>%                                           #Group it by Family
+  summarise(avgF = mean(Body_mass_female_mean, na.rm=TRUE),      #And calculate mean male BM
+            avgM = mean(Body_mass_male_mean, na.rm=TRUE))        #And mean female BM
+s
+```
+
+## Challenge 8
+```{r}
+s <- d %>%
+    mutate(Binomial = paste(Genus, Species, sep = " ")) %>%
+    select(Binomial, Body_mass_female_mean, Body_mass_male_mean, Mass_Dimorphism) %>%
+    group_by(Binomial) %>%
+    summarise(avgF = mean(Body_mass_female_mean, na.rm = TRUE), avgM = mean(Body_mass_male_mean,
+        na.rm = TRUE), avgBMD = mean(Mass_Dimorphism, na.rm = TRUE))
+s
+```
+Acccording to Kamilar & Cooper’s (2013) dataset, what is the average male and female size, and body mass dimorphism of my two main study species (vervet monkeys, Chlorocebus pygerythrus; and woolly monkeys, Lagothrix lagotricha)? Which has a larger average female body mass? Which is more sexually dimorphic?
+- See output above
+
+Compare the body size of my two main study taxa at the Family level (i.e., Cercopithecidae vs. Atelidae) by plotting (using {ggplot2}) the body mass of males and females and sexual dimorphism. If you can, make the Cercopithecid boxes green, and the Atelid boxes purple.
+-- Struggling with this
+
+# Module 7 Central Tendency and Variance
+
+## Challenge 1
+```{r}
+x <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 25, 50, 100, 200, 1000)
+gm1 <- function(x) {
+    prod(x)^(1/length(x))
+}
+gm1(x)
+
+gm2 <- function(x) {
+    exp(mean(log(x)))
+}
+gm2(x)
+```
+
+## Challenge 2
+```{r}
+ss1 <- function(x) {
+    sum((x - mean(x))^2)
+}
+ss1(x)
+# This is equivalence to...
+ss2 <- function(x) {
+    sum(x^2) - length(x) * mean(x)^2
+}
+ss2(x)
+# A shortcut!
+ss3 <- function(x) {
+    sum(x^2) - (sum(x))^2/length(x)
+}
+ss3(x)
+```
+
+Population Variance
+```{r}
+pop_v <- function(x) {
+    sum((x - mean(x))^2)/(length(x))
+}
+pop_v(x)
+```
+
+## Challenge 3
+```{r}
+sample_v <- function(x) {
+    sum((x - mean(x))^2)/(length(x) - 1)
+}
+sample_v(x)
+```
+
+## Challenge 4
+```{r}
+SE1 <- function(x) {
+    sqrt(sample_v(x)/length(x))
+}
+SE1(x)
+
+#With the var() function
+SE2 <- function(x) {
+    sqrt(var(x)/length(x))
+}
+SE2(x)
+```
+
+```{r}
+library(sciplot)
+se(x)
+```
+
+```{r}
+set.seed(1)
+x <- rnorm(10000, 0, 1)
+hist(x)
+```
+
+```{r}
+x <- seq(from = -4, to = 4, by = 0.01)
+plot(x, dnorm(x), cex = 0.4)
+```
+
+```{r}
+plot(x, pnorm(x), cex = 0.4)
+```
+
+```{r}
+x <- seq(from = 0, to = 1, by = 0.01)
+plot(qnorm(x), x, cex = 0.4)
+```
+
+Confidence Intervals
+```{r}
+x <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+m <- mean(x)
+n <- length(x)
+v <- var(x)
+s <- sd(x)
+e <- sqrt(v/n)
+upper <- mean(x) + qnorm(0.975, mean = 0, sd = 1) * se(x)
+lower <- mean(x) + qnorm(0.025, mean = 0, sd = 1) * se(x)  # or lower <- mean(x) - qnorm(0.975)*se(x)
+ci <- c(lower, upper)
+ci
+```
+
+Alternative Way to find CI
+```{r}
+upper <- m + qnorm(0.975, mean = 0, sd = 1) * e
+lower <- m + qnorm(0.025, mean = 0, sd = 1) * e  # or lower <- m - qnorm(0.975)*e
+ci <- c(lower, upper)
+ci
+```
+
+Bootstrapping CI
+```{r}
+set <- NULL  # sets up a dummy variable to hold our 10000 simulations
+n <- 15
+for (i in 1:10000) {
+    set[i] <- mean(sample(x, n, replace = TRUE))
+}
+quantile(set)
+quantile(set, c(0.025, 0.975))
+```
+
+How does the CI calculated this way, by simulation, compare to that calculated based on assuming a normal distribution?
+
+-- Answer: Bootstrapping repeatedly samples observations with replacement from the original dataset to estimate the distribution of a statistic. This does not assume normal distribution (?)
+
+How does the width of the CI change with decreasing or increasing n (the number of observations drawn from your sample with replacement)? For example, if we set n at 5? At 50? At 500?
+
+-- Answer: As the sample size increases, the width of the CI tends to decrease. 
