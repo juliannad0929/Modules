@@ -1,0 +1,98 @@
+---
+title: "Mod 15 (Wk 9)"
+author: "Julianna D."
+date: "2023-11-02"
+output: html_document
+---
+
+# Module 15 Multiple Regression and ANCOVA
+
+```{r}
+R = matrix(cbind(1, 0.8, -0.5, 0, 0.8, 1, -0.3, 0.3, -0.5, -0.3, 1, 0.6, 0,
+    0.3, 0.6, 1), nrow = 4)
+```
+
+```{r}
+n <- 1000
+k <- 4
+M <- NULL
+V <- NULL
+mu <- c(15, 40, 5, 23)  # vector of variable means
+s <- c(5, 20, 4, 15)  # vector of variable SDs
+for (i in 1:k) {
+    V <- rnorm(n, mu[i], s[i])
+    M <- cbind(M, V)
+}
+M <- matrix(M, nrow = n, ncol = k)
+orig <- as.data.frame(M)
+names(orig) = c("Y", "X1", "X2", "X3")
+head(orig)
+```
+
+```{r}
+cor(orig)
+plot(orig)
+```
+
+```{r}
+ms <- apply(orig, 2, FUN = "mean") 
+ms
+```
+
+```{r}
+sds <- apply(orig, 2, FUN = "sd")
+sds
+```
+
+```{r}
+normalized <- sweep(orig, 2, STATS = ms, FUN = "-")  # 2nd dimension is columns, removing array of means, function = subtract
+normalized <- sweep(normalized, 2, STATS = sds, FUN = "/")  # 2nd dimension is columns, scaling by array of sds, function = divide
+head(normalized)  # now a dataframe of Z scores
+```
+
+```{r}
+M <- as.matrix(normalized)
+```
+
+```{r}
+U = chol(R)
+newM = M %*% U
+new = as.data.frame(newM)
+names(new) = c("Y", "X1", "X2", "X3")
+cor(new)
+```
+
+```{r}
+plot(orig)
+plot(new)
+```
+
+```{r}
+df <- sweep(new, 2, STATS = sds, FUN = "*")  # scale back out to original mean...
+df <- sweep(df, 2, STATS = ms, FUN = "+")  # and standard deviation
+head(df)
+cor(df)
+```
+
+```{r}
+plot(df)
+```
+
+## Challenge 1
+
+```{r, message = FALSE}
+library(ggplot2)
+require(gridExtra)
+```
+
+
+```{r}
+g1 <- ggplot(data = df, aes(x = X1, y = Y)) + geom_point() + geom_smooth(method = "lm",
+    formula = y ~ x)
+g2 <- ggplot(data = df, aes(x = X2, y = Y)) + geom_point() + geom_smooth(method = "lm",
+    formula = y ~ x)
+g3 <- ggplot(data = df, aes(x = X3, y = Y)) + geom_point() + geom_smooth(method = "lm",
+    formula = y ~ x)
+grid.arrange(g1, g2, g3, ncol = 3)
+```
+
