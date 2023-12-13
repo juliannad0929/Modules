@@ -12,10 +12,10 @@ library(curl)
 library(ggplot2)
 library(lme4)
 library(AICcmodavg)
-library(MuMIn)
+library(MuMIn) 
 ```
 
-Varieties of Mixed Models
+Varieties of Mixed Models 
 - Linear Mixed Models (LMM)
 
 - Generalized Linear Mixed Models (GLMM)
