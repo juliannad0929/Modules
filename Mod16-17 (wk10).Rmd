@@ -5,4 +5,407 @@ date: "2023-11-09"
 output: html_document
 ---
 
+# Module 16 Model Selection in General Linear Regression
+
+## Calculate F statistic & compare it to F distribution to derive a p value.
+
+```{r, message=FALSE}
+library(curl)
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Fall21/zombies.csv")
+z <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = TRUE)
+m1 <- lm(data = z, height ~ age * gender)  # full model
+m2 <- lm(data = z, height ~ age + gender)  # model without interactions
+m3 <- lm(data = z, height ~ age)  # model with one predictor
+m4 <- lm(data = z, height ~ 1)  # intercept only model
+```
+
+
+```{r}
+anova(m2, m1, test = "F")
+```
+
+```{r}
+f <- ((summary(m1)$r.squared - summary(m2)$r.squared) * (nrow(z) - 3 - 1))/((1 - summary(m1)$r.squared) * (3 - 2))
+f
+```
+
+df1 = q-p, df2 = n-q
+```{r}
+p <- 1 - pf(f, df1 = 3 - 2, df2 = nrow(z) - 3, lower.tail = TRUE)
+p
+```
+
+```{r}
+anova(m3, m2, test = "F")
+```
+
+```{r}
+f <- ((summary(m2)$r.squared - summary(m3)$r.squared) * (nrow(z) - 2 - 1))/((1 - summary(m2)$r.squared) * (2 - 1))
+f
+```
+
+```{r}
+p <- 1 - pf(f, df1 = 2 - 1, df2 = nrow(z) - 2, lower.tail = TRUE) 
+p
+```
+
+## Foward Selection
+
+```{r}
+m0 <- lm(data = z, height ~ 1)
+summary(m0)
+```
+
+```{r}
+add1(m0, scope = . ~ . + age + weight + zombies_killed + years_of_education,
+    test = "F")
+```
+
+```{r}
+m1 <- update(m0, formula = . ~ . + weight)
+summary(m1)
+```
+
+```{r}
+add1(m1, scope = . ~ . + age + weight + zombies_killed + years_of_education,
+    test = "F")
+```
+
+```{r}
+m2 <- update(m1, formula = . ~ . + age)
+summary(m2)
+```
+
+```{r}
+add1(m2, scope = . ~ . + age + weight + zombies_killed + years_of_education,
+    test = "F")
+```
+The best model in this case is m2.
+```{r}
+summary(m2)
+```
+
+## Backward Selection
+
+```{r}
+m0 <- lm(data = z, height ~ age + weight + zombies_killed + years_of_education)
+summary(m0)
+```
+
+```{r}
+drop1(m0, test = "F")
+```
+
+```{r}
+m1 <- update(m0, . ~ . - years_of_education)
+summary(m1)
+```
+
+```{r}
+drop1(m1, test = "F")
+```
+
+```{r}
+m2 <- update(m1, . ~ . - zombies_killed)
+summary(m2)
+```
+
+```{r}
+drop1(m2, test = "F")
+```
+
+m2 is the best model again
+```{r}
+summary(m2)
+```
+
+## Model Selection using AIC
+
+```{r}
+library(MASS)
+stepAIC(m0, direction = "both")
+```
+
+```{r}
+library(AICcmodavg)
+print(aictab(list(m0, m1, m2), c("m0", "m1", "m2")), LL = FALSE)
+```
+
+# Module 17 Generalized Linear Modeling
+
+3 components:
+
+1. Systematic or linear component
+
+2. Error structure or random component
+
+3. link function
+- identity link; log link; logit link
+
+
+## Model Fitting GLM & Logistic Regression
+
+```{r, message=FALSE}
+library(curl)
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Fall21/graddata.csv")
+d <- read.csv(f, header = TRUE, sep = ",")
+head(d)
+```
+
+```{r}
+summary(d)
+```
+
+Some visualization...
+```{r}
+par(mfrow = c(1, 2))
+plot(as.factor(d$admit), d$gpa, xlab = "Admit", ylab = "GPA", col = "lightgreen")
+plot(as.factor(d$admit), d$gre, xlab = "Admit", ylab = "GRE", col = "lightblue")
+```
+
+```{r}
+pairs(d)
+```
+
+```{r}
+table(d$admit, d$rank)
+```
+
+## Challenge 1
+
+Repeat example using *gpa* rather than *gre*
+
+- Is gpa a significant predictor of the odds of admission?
+
+- What is the estimate of β1
+ and the 95% CI around that estimate?
+
+- How much does an increase of 1 unit in gpa increase the actual odds ratio (as opposed to the log(odds ratio) for admission?
+
+- What is the 95% CI around this odds ratio?
+
+
+```{r}
+library(ggstats)
+glm <- glm(data = d, admit ~ gpa, family = "binomial")
+summary(glm)
+```
+
+```{r}
+coeffs <- glm$coefficients
+coeffs
+```
+
+```{r}
+CI <- confint(glm, level = 0.95)
+CI
+```
+
+```{r}
+ORchange <- exp(coeffs[2])
+ORchange
+ORchangeCI <- exp(CI[2, ])
+ORchangeCI
+```
+Visualization!
+```{r}
+library(ggplot2)
+x <- data.frame(gpa = seq(from = 2, to = 4, length.out = 100))
+prediction <- cbind(gpa = x, response = predict(glm, newdata = x, type = "response"))
+head(prediction)
+```
+
+```{r}
+p <- ggplot(prediction, aes(x = gpa, y = response)) + geom_line() + xlab("GPA") +
+    ylab("Pr(admit)")
+p
+```
+
+```{r}
+prediction <- cbind(gpa = x, predict(glm, newdata = x, type = "response", se = TRUE))
+prediction$LL <- prediction$fit - 1.96 * prediction$se.fit
+prediction$UL <- prediction$fit + 1.96 * prediction$se.fit
+head(prediction)
+```
+
+```{r}
+p <- ggplot(prediction, aes(x = gpa, y = fit))
+p <- p + geom_ribbon(aes(ymin = LL, ymax = UL), alpha = 0.2) + geom_line() +
+    xlab("GPA") + ylab("Pr(admit)")
+p <- p + geom_point(data = d, aes(x = gpa, y = admit))
+p
+```
+
+
+```{r}
+ggcoef_model(glm, exponentiate = TRUE)
+```
+
+### Likelihood Ratio Tests
+
+```{r}
+glm1 <- glm(data = d, admit ~ 1, family = "binomial")
+glm2 <- glm(data = d, admit ~ gpa, family = "binomial")
+anova(glm1, glm2, test = "Chisq")
+```
+
+```{r, message=FALSE}
+library(lmtest)
+lrtest(glm1, glm2)
+```
+```{r}
+Dglm1 <- glm1$deviance  # intercept only model
+Dglm1
+
+Dglm1 <- deviance(glm1)
+Dglm1
+```
+
+```{r}
+Dglm2 <- glm2$deviance  # model with intercept and one predictor
+Dglm2
+
+Dglm2 <- deviance(glm2)
+Dglm2
+```
+
+```{r}
+chisq <- Dglm1 - Dglm2  # this is a measure of how much the fit improves by adding in the predictor
+chisq
+```
+
+```{r}
+p <- 1 - pchisq(chisq, df = 1)
+p
+```
+
+```{r}
+x2 <- glm1$null.deviance - glm1$deviance
+x2
+```
+
+```{r}
+p <- 1 - pchisq(x2, df = 1)
+p
+```
+
+```{r}
+x2 <- glm2$null.deviance - glm2$deviance
+x2
+```
+
+```{r}
+p <- 1 - pchisq(x2, df = 1)
+p
+```
+
+## Challenge 2
+ 
+Multiple Logistic Regression
+
+Using the same “graddata.csv” dataset, run a multiple logistic regression analysis using gpa, gre, and rank to look at student admissions to graduate school.
+
+```{r}
+d$rank <- as.factor(d$rank)  # make sure rank is a categorical variable
+glmGGR <- glm(data = d, formula = admit ~ gpa + gre + rank, family = binomial)  # 3 predictor model
+summary(glmGGR)
+```
+
+```{r}
+coeff <- glmGGR$coefficients
+coeffCI <- cbind(coeff, confint(glmGGR))
+coeffCI
+```
+
+```{r}
+ORcoeff <- exp(coeff)
+ORcoeff
+
+ORcoeffCI <- exp(coeffCI)
+ORcoeffCI
+```
+
+Compare 2 vs 3 factor models
+```{r}
+# Compare 2 verus 3 factor models
+glmGG <- glm(data = d, formula = admit ~ gpa + gre, family = binomial)
+glmGR <- glm(data = d, formula = admit ~ gpa + rank, family = binomial)
+glmRG <- glm(data = d, formula = admit ~ gre + rank, family = binomial)
+anova(glmGG, glmGGR, test = "Chisq")
+```
+
+```{r}
+anova(glmGR, glmGGR, test = "Chisq")
+```
+
+```{r}
+anova(glmRG, glmGGR, test = "Chisq")
+```
+
+Adding in interaction terms doesn't significantly decrease deviance
+```{r}
+# Compare model with and model without interactions
+glmNO <- glm(data = d, admit ~ rank + gpa + gre, family = "binomial")
+glmALL <- glm(data = d, admit ~ rank * gpa * gre, family = "binomial")
+anova(glmNO, glmALL, test = "Chisq")
+```
+
+Compare the ORs
+```{r}
+ggcoef_model(glmGGR, exponentiate = TRUE)
+# This visualization is SO COOL!!!!
+```
+
+## Challenge 3
+
+Log-Linear or Poisson Regression
+
+```{r}
+library(curl)
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Fall21/woollydata.csv")
+d <- read.csv(f, header = TRUE, sep = ",", stringsAsFactors = TRUE)
+head(d)
+summary(d)
+```
+
+```{r}
+# glm of success~age
+glm1 <- glm(data = d, success ~ rank, family = "poisson")
+summary(glm1)
+```
+
+```{r}
+coeffs <- glm1$coefficients
+coeffs
+```
+
+```{r}
+CIs <- confint(glm1, level = 0.95)
+CIs
+```
+
+```{r}
+glm2 <- glm(data = d, success ~ age + rank, family = "poisson")
+summary(glm2)
+```
+
+```{r}
+coeffs <- glm2$coefficients
+coeffs
+
+CIs <- confint(glm2, level = 0.95)
+CIs
+```
+```{r}
+glm3 <- glm(data = d, success ~ age * rank, family = "poisson")
+summary(glm3)
+```
+
+```{r}
+coeffs <- glm3$coefficients
+coeffs
+
+CIs <- confint(glm3, level = 0.95)
+CIs
+```
 
