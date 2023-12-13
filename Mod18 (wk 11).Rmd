@@ -5,4 +5,154 @@ date: "2023-11-16"
 output: html_document
 ---
 
+# Module 18 Mixed Effects Modeling
+
+```{r, message=FALSE}
+library(curl)
+library(ggplot2)
+library(lme4)
+library(AICcmodavg)
+library(MuMIn)
+```
+
+Varieties of Mixed Models
+- Linear Mixed Models (LMM)
+
+- Generalized Linear Mixed Models (GLMM)
+
+- Nonlinear Mixed Models (NLMM)
+
+Mixed models include BOTH fixed & random effects.
+
+## Challenge 1
+```{r}
+f <- curl("https://raw.githubusercontent.com/fuzzyatelin/fuzzyatelin.github.io/master/AN588_Fall21/chimpgrooming.csv")
+d <- read.csv(f, header = TRUE, sep = ",")
+head(d)
+summary(d)
+```
+
+Visualization of grooming received in relation to subject ID
+
+```{r}
+par(mfrow = c(1, 1))
+boxplot(data = d, duration ~ subject, col = c("lightpink1"))
+```
+
+Grooming Received in relation to reprod. cond.
+
+```{r}
+boxplot(data = d, duration ~ reprocondition, col = c("burlywood2", "lightpink1"))
+```
+
+Grooming received in relation to reprod. cond. and parity
+
+```{r}
+boxplot(data = d, duration ~ reprocondition * parity, col = c("burlywood2",
+    "lightpink1"))
+```
+
+```{r}
+boxplot(data = d, duration ~ reprocondition * subject, col = c("burlywood2",
+    "lightpink1"))
+```
+### Random Intercept Models
+
+```{r}
+lme <- lmer(data = d, duration ~ reprocondition + parity + (1 | subject))
+summary(lme)
+```
+
+```{r}
+coefficients(lme)
+```
+Statistical Significance
+
+```{r}
+full <- lmer(data = d, duration ~ reprocondition + parity + (1 | subject), REML = FALSE)
+summary(full)
+```
+
+```{r}
+reduced <- lmer(data = d, duration ~ parity + (1 | subject), REML = FALSE)
+summary(reduced)
+```
+
+Likelihood Ratio Test using anova()
+```{r}
+anova(reduced, full, test = "Chisq")
+```
+
+```{r}
+full <- lmer(data = d, duration ~ reprocondition + parity + (1 | subject), REML = FALSE)
+reduced <- lmer(data = d, duration ~ reprocondition + (1 | subject), REML = FALSE)
+anova(reduced, full, test = "Chisq")
+```
+Including parity singificantly improves the fit of our model!
+
+
+## Challenge 2
+
+```{r}
+full <- lmer(data = d, duration ~ reprocondition * parity + (1 | subject), REML = FALSE)
+reduced <- lmer(data = d, duration ~ reprocondition + parity + (1 | subject),
+    REML = FALSE)
+anova(reduced, full, test = "Chisq")
+```
+### Random Slope Models
+
+```{r}
+lme <- lmer(data = d, duration ~ reprocondition + parity + (1 + reprocondition |
+    subject) + (1 + parity | subject), REML = FALSE)
+summary(lme)
+```
+
+```{r}
+coefficients(lme)
+```
+
+Reproductive Condition
+```{r}
+
+full <- lmer(data = d, duration ~ reprocondition + parity + (1 + reprocondition |
+    subject) + (1 + parity | subject), REML = FALSE)
+
+reduced <- lmer(data = d, duration ~ parity + (1 + reprocondition | subject) +
+    (1 + parity | subject), REML = FALSE)
+```
+```{r}
+anova(reduced, full, test = "Chisq")
+```
+Parity
+```{r}
+full <- lmer(data = d, duration ~ reprocondition + parity + (1 + reprocondition |
+    subject) + (1 + parity | subject), REML = FALSE)
+
+null <- lmer(data = d, duration ~ reprocondition + (1 + reprocondition | subject) +
+    (1 + parity | subject), REML = FALSE)
+```
+
+```{r}
+anova(reduced, full, test = "Chisq")
+```
+
+Determining Model Fit
+
+## Challenge 3
+
+```{r}
+print(aictab(list(full, reduced, null), c("full", "reduced", "null")), LL = FALSE)
+```
+
+```{r}
+r.squaredGLMM(full)
+```
+
+```{r}
+r.squaredGLMM(reduced)
+```
+
+```{r}
+r.squaredGLMM(null)
+```
 
